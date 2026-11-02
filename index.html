@@ -457,6 +457,8 @@
 
             <div id="creditRowsContainer"></div>
 
+            <div id="creditCalc" class="small mt-1" style="display:none;"></div>
+
           </div>
 
         </div>
@@ -1183,7 +1185,10 @@ Object.assign(i18n.ko, {
   credit: "추가 인정 시간",
   creditAdd: "+ 사유 추가",
   creditHoursPh: "시간",
-  creditOtherPh: "기타 사유"
+  creditOtherPh: "기타 사유",
+  creditCalc: (credited, entered, cap, capped) =>
+    `✔ 인정되는 추가 시간: <b>${credited}시간</b>` +
+    (capped ? `<br><span class="text-danger">입력 ${entered}시간 중 야외 봉사와 합쳐 ${cap}시간까지만 인정됩니다 (S-236 11항). 실제 시간은 비고에 그대로 남습니다.</span>` : "")
 });
 
 Object.assign(i18n.ru, {
@@ -1205,7 +1210,10 @@ Object.assign(i18n.ru, {
   hoursRequired: "Введите часы служения.",
   creditAdd: "+ Добавить",
   creditHoursPh: "Часы",
-  creditOtherPh: "Другая причина"
+  creditOtherPh: "Другая причина",
+  creditCalc: (credited, entered, cap, capped) =>
+    `✔ Засчитывается: <b>${credited} ч</b>` +
+    (capped ? `<br><span class="text-danger">Из ${entered} ч засчитывается только до ${cap} ч вместе с часами служения (S-236 п. 11). Фактические часы сохраняются в примечании.</span>` : "")
 });
 
 Object.assign(i18n.en, {
@@ -1227,7 +1235,10 @@ Object.assign(i18n.en, {
   hoursRequired: "Enter service hours.",
   creditAdd: "+ Add",
   creditHoursPh: "Hours",
-  creditOtherPh: "Other reason"
+  creditOtherPh: "Other reason",
+  creditCalc: (credited, entered, cap, capped) =>
+    `✔ Credit counted: <b>${credited} h</b>` +
+    (capped ? `<br><span class="text-danger">Of ${entered} h entered, credit is limited to ${cap} h combined with field service (S-236 par. 11). Actual hours remain in remarks.</span>` : "")
 });
 
 /* 추가 인정 사유 번역 (서버 목록에 없는 사유는 그대로 표시) */
@@ -1255,6 +1266,8 @@ function creditLabel(reason) {
 let currentLang = "ko";
 let publishers = [];
 let creditReasons = ["베델", "대회장", "LDC", "순회대회", "지역대회", "파이오니아 학교", "회관 유지보수", "기타"];
+let creditCap = 55;                       // S-236 11항 (서버 설정)
+let creditCapExempt = ["파이오니아 학교"]; // 상한과 별개로 인정
 
 let selectedPub = null;
 let reportCtx = null;          // 서버가 준 보고 화면 정보 (form, exists, hasPin, authenticated ...)
@@ -1336,6 +1349,14 @@ window.onload = async function () {
   if (Array.isArray(dir.creditReasons) && dir.creditReasons.length) {
     creditReasons = dir.creditReasons;
   }
+  if (typeof dir.creditCap === "number") creditCap = dir.creditCap;
+  if (Array.isArray(dir.creditCapExempt)) creditCapExempt = dir.creditCapExempt;
+
+  // 시간·추가 인정 입력이 바뀔 때마다 인정 시간 다시 계산
+  document.getElementById("actualHours").addEventListener("input", updateCreditCalc);
+  document.getElementById("creditContainer").addEventListener("input", updateCreditCalc);
+  document.getElementById("creditContainer").addEventListener("change", updateCreditCalc);
+  document.getElementById("creditContainer").addEventListener("click", () => setTimeout(updateCreditCalc, 0));
   populatePublisherDropdowns();
   resetCreditRows();
 };
@@ -1476,6 +1497,7 @@ function setLanguage(lang) {
 
   populatePublisherDropdowns();
   relabelCreditRows();
+  updateCreditCalc();
 
   if (pioneerAllRecords) {
     fillPioneerYearFilter();
@@ -1748,6 +1770,7 @@ function fillExistingReport(r) {
   document.getElementById("remarks").value = r.userRemarks || "";
 
   restoreCreditRows(r.creditItems, Number(r.credit) || 0);
+  updateCreditCalc();
 }
 
 function resetReportFields() {
@@ -1784,6 +1807,7 @@ function toggleHours() {
 function resetCreditRows() {
   document.getElementById("creditRowsContainer").innerHTML = "";
   addCreditRow();
+  updateCreditCalc();
 }
 
 function addCreditRow(initialHours, initialReason) {
@@ -1844,6 +1868,23 @@ function toggleCustomReasonInput(rowId) {
   const row = document.getElementById(rowId);
   const sel = row.querySelector(".credit-reason-sel").value;
   row.querySelector(".credit-custom-text").style.display = sel === "기타" ? "block" : "none";
+}
+
+/** 서버와 같은 규칙으로 인정 시간 미리 계산 (실제 저장 값은 서버가 다시 계산) */
+function updateCreditCalc() {
+  const box = document.getElementById("creditCalc");
+  if (!box) return;
+  const items = collectCreditItems();
+  if (!items.length) { box.style.display = "none"; return; }
+
+  const field = Number(document.getElementById("actualHours").value) || 0;
+  let school = 0, other = 0;
+  items.forEach(it => { if (creditCapExempt.includes(it.reason)) school += it.hours; else other += it.hours; });
+  const otherCredited = Math.max(0, Math.min(other, creditCap - field));
+  const credited = school + otherCredited;
+
+  box.innerHTML = t().creditCalc(credited, school + other, creditCap, otherCredited < other);
+  box.style.display = "block";
 }
 
 function collectCreditItems() {
