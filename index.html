@@ -1549,14 +1549,15 @@ function fillSelect(select, list, placeholder, keepValue) {
 function populatePublisherDropdowns() {
   const pubSel = document.getElementById("publisherSelect");
   const pioSel = document.getElementById("pioneerSelect");
-  fillSelect(pubSel, publishers, t().selectPub, pubSel.value);
+  // 보고 목록에는 이번 보고월 대상자만 (전입 예정 파이오니아는 '파이오니아 기록' 탭에만 표시)
+  fillSelect(pubSel, publishers.filter(p => p.canReport !== false), t().selectPub, pubSel.value);
   fillSelect(pioSel, publishers.filter(p => p.isPioneer), t().selectPio, pioSel.value);
 }
 
 function filterPublishers() {
   const q = document.getElementById("nameSearch").value.toLowerCase().trim();
   const select = document.getElementById("publisherSelect");
-  const filtered = publishers.filter(p => matchesQuery(p, q));
+  const filtered = publishers.filter(p => p.canReport !== false && matchesQuery(p, q));
   fillSelect(select, filtered, t().selectPub);
   if (filtered.length === 1) {
     select.value = filtered[0].id;
