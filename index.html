@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ИР Отчеты</title>
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ИР Отчеты">
+
+  <link rel="icon" type="image/png" href="icon-e.png">
+  <link rel="shortcut icon" href="icon-e.png">
+  <link rel="apple-touch-icon" href="icon-e.png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .card {
+      border-radius: 16px;
+      border: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    .nav-tabs .nav-link {
+      font-weight: 700;
+      color: #495057;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: #0d6efd;
+      border-bottom: 3px solid #0d6efd;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #2c3e50;
+      border-left: 5px solid #0d6efd;
+      padding-left: 10px;
+      margin-bottom: 15px;
+    }
+
+    .choice-group .btn {
+      padding: 14px 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 12px;
+    }
+
+    .btn-check:checked + .btn-outline-success {
+      background-color: #198754;
+      color: white;
+      border-color: #198754;
+    }
+
+    .btn-check:checked + .btn-outline-danger {
+      background-color: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+
+    .selected-badge-box {
+      background: #e8f5e9;
+      border: 2px solid #4caf50;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #2e7d32;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .table-pioneer-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .sticky-col-month {
+      position: sticky;
+      left: 0;
+      background-color: #ffffff;
+      z-index: 2;
+      width: 68px;
+      min-width: 68px;
+      max-width: 68px;
+      text-align: center;
+      border-right: 2px solid #dee2e6 !important;
+    }
+
+    thead th.sticky-col-month {
+      background-color: #f8f9fa !important;
+      z-index: 3;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    /* 사유 및 비고는 줄바꿈하지 않음 */
+    .pioneer-remarks-cell {
+      white-space: nowrap;
+      min-width: 220px;
+    }
+
+    /* 파이오니아 연간 합계 */
+    .annual-summary-card {
+      background: #f1f6ff;
+      border: 1px solid #d5e3ff;
+    }
+
+    .annual-summary-item {
+      text-align: center;
+    }
+
+    .annual-summary-label {
+      font-size: 0.78rem;
+      color: #6c757d;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .annual-summary-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    /* 기존 보고 인증 */
+    .existing-auth-card {
+      border: 1px solid #ffc107;
+      background: #fffdf3;
+    }
+
+    .report-locked {
+      opacity: 0.55;
+    }
+  </style>
+</head>
+
+<body class="py-3">
+
+<div class="container" style="max-width: 560px;">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="badge bg-primary px-3 py-2 fs-6" id="badgeServiceYear">봉사연도</span>
+
+    <div class="btn-group">
+      <button class="btn btn-sm btn-outline-secondary" id="btnKo" onclick="setLanguage('ko')">한국어</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btnRu" onclick="setLanguage('ru')">Русский</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btnEn" onclick="setLanguage('en')">EN</button>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs nav-fill mb-3 bg-white rounded-top shadow-sm">
+    <li class="nav-item">
+      <button class="nav-link active" id="tabBtnReport" onclick="switchMainTab('report')">
+        야외봉사 보고
+      </button>
+    </li>
+
+    <li class="nav-item">
+      <button class="nav-link" id="tabBtnPioneer" onclick="switchMainTab('pioneer')">
+        파이오니아 개인 기록
+      </button>
+    </li>
+  </ul>
+
+
+  <!-- =====================================================
+       탭 1 : 야외봉사 보고
+       ===================================================== -->
+  <div id="tabReportSection">
+
+    <div class="text-center mb-3">
+      <h4 class="fw-bold" id="txtTitle">회중 야외봉사 보고</h4>
+      <div class="fw-bold text-primary fs-5" id="txtCurrentMonth"></div>
+    </div>
+
+
+    <!-- 테스트 모드 -->
+    <div
+      id="testModeBox"
+      class="card p-2 bg-warning-subtle border-warning shadow-sm mb-3"
+      style="display:none;"
+    >
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+          🧪 테스트 모드
+        </span>
+
+        <div class="d-flex align-items-center gap-2">
+          <label
+            for="testMonthSelect"
+            class="form-label mb-0 fw-bold small text-dark"
+          >
+            입력 봉사월:
+          </label>
+
+          <select
+            id="testMonthSelect"
+            class="form-select form-select-sm fw-bold border-dark w-auto"
+            onchange="onTestMonthChanged()"
+          ></select>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- 제출기간 종료/대기 -->
+    <div
+      id="closedAlert"
+      class="alert alert-warning text-center fw-bold shadow-sm"
+      style="display:none;"
+    ></div>
+
+
+    <form id="serviceForm">
+
+      <!-- 1. 본인 확인 -->
+      <div class="card p-3 mb-3">
+
+        <div class="section-title" id="txtSec1">
+          1. 본인 확인
+        </div>
+
+        <div class="mb-3">
+
+          <label class="form-label fw-bold" id="lblSearch">
+            성명 선택 및 검색
+          </label>
+
+          <input
+            type="text"
+            id="nameSearch"
+            class="form-control mb-2"
+            placeholder="이름 검색"
+            oninput="filterPublishers()"
+            autocomplete="off"
+          >
+
+          <select
+            id="publisherSelect"
+            class="form-select form-select-lg"
+            onchange="onPublisherSelectChanged()"
+          >
+            <option value="">전도인을 선택하세요</option>
+          </select>
+
+          <div
+            id="selectedBadge"
+            class="mt-3 selected-badge-box"
+            style="display:none;"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- 기존 보고 인증 -->
+      <div
+        id="existingReportAuthBox"
+        class="card existing-auth-card p-3 mb-3"
+        style="display:none;"
+      >
+
+        <div class="fw-bold text-warning-emphasis mb-2" id="existingAuthTitle">
+          🔐 기존 보고 본인 확인
+        </div>
+
+        <div class="small text-secondary mb-3" id="existingAuthMessage">
+        </div>
+
+        <input
+          type="password"
+        inputmode="numeric"
+          id="existingReportPin"
+          class="form-control form-control-lg text-center mb-2"
+          maxlength="6"
+          placeholder="PIN"
+        >
+
+        <input
+          type="password"
+        inputmode="numeric"
+          id="existingReportPinConfirm"
+          class="form-control form-control-lg text-center mb-3"
+          maxlength="6"
+          placeholder="PIN 확인"
+          style="display:none;"
+        >
+
+        <button
+          type="button"
+          class="btn btn-dark w-100 fw-bold"
+          id="btnExistingReportAuth"
+          onclick="authenticateExistingReport()"
+        >
+          기존 보고 열기
+        </button>
+
+      </div>
+
+
+      <!-- 2. 봉사 활동 보고 -->
+      <div class="card p-3 mb-3" id="reportEntryCard">
+
+        <div class="section-title" id="txtSec2">
+          2. 봉사 활동 보고
+        </div>
+
+
+        <label class="form-label fw-bold mb-2" id="lblParticipated">
+          이번 달 야외 봉사에 참여하셨습니까?
+        </label>
+
+
+        <div class="row g-2 choice-group mb-3">
+
+          <div class="col-6">
+            <input
+              type="radio"
+              class="btn-check"
+              name="participateChoice"
+              id="partYes"
+              value="예"
+              checked
+              onchange="toggleParticipation(true)"
+            >
+
+            <label
+              class="btn btn-outline-success w-100"
+              for="partYes"
+              id="btnYes"
+            >
+              ✓ 예 (참여함)
+            </label>
+          </div>
+
+
+          <div class="col-6">
+            <input
+              type="radio"
+              class="btn-check"
+              name="participateChoice"
+              id="partNo"
+              value="아니오"
+              onchange="toggleParticipation(false)"
+            >
+
+            <label
+              class="btn btn-outline-danger w-100"
+              for="partNo"
+              id="btnNo"
+            >
+              ✕ 아니오
+            </label>
+          </div>
+
+        </div>
+
+
+        <div id="activeFields">
+
+          <div class="mb-3">
+            <label class="form-label fw-bold" id="lblStudies">
+              사회한 개별 성서 연구 건수
+            </label>
+
+            <input
+              type="number"
+              id="bibleStudies"
+              class="form-control form-control-lg"
+              min="0"
+              value="0"
+            >
+          </div>
+
+
+          <div id="auxContainer" class="form-check mb-3">
+
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="isAux"
+              onchange="toggleHours()"
+            >
+
+            <label
+              class="form-check-label fw-bold"
+              for="isAux"
+              id="lblAux"
+            >
+              이번 달 보조 파이오니아 활동함
+            </label>
+
+          </div>
+
+
+          <div
+            id="hoursContainer"
+            class="mb-3"
+            style="display:none;"
+          >
+
+            <label
+              class="form-label fw-bold text-primary"
+              id="lblHours"
+            >
+              봉사 시간 (필수)
+            </label>
+
+            <input
+              type="number"
+              id="actualHours"
+              class="form-control form-control-lg border-primary"
+              min="0"
+              placeholder="시간 입력"
+            >
+
+          </div>
+
+
+          <div
+            id="creditContainer"
+            class="mb-3"
+            style="display:none;"
+          >
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+
+              <label
+                class="form-label fw-bold text-secondary mb-0"
+                id="lblCredit"
+              >
+                추가 인정 시간
+              </label>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success fw-bold"
+                id="btnAddCredit"
+                onclick="addCreditRow()"
+              >
+                + 사유 추가
+              </button>
+
+            </div>
+
+            <div id="creditRowsContainer"></div>
+
+          </div>
+
+        </div>
+
+
+        <div class="mb-3">
+
+          <label class="form-label fw-bold" id="lblRemarks">
+            비고 및 메모 (선택)
+          </label>
+
+          <textarea
+            id="remarks"
+            class="form-control"
+            rows="2"
+          ></textarea>
+
+        </div>
+
+
+        <button
+          type="button"
+          id="submitBtn"
+          class="btn btn-primary btn-lg w-100 fw-bold shadow"
+          onclick="submitServiceReport()"
+          disabled
+        >
+          보고서 제출하기
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+
+  <!-- =====================================================
+       탭 2 : 파이오니아 개인 기록
+       ===================================================== -->
+  <div id="tabPioneerSection" style="display:none;">
+
+    <div id="pioneerAuthBox" class="card p-4 text-center">
+
+      <h5 class="fw-bold mb-3" id="pioneerAuthTitle">
+        정규 파이오니아 기록 열람
+      </h5>
+
+      <p class="text-muted small" id="pioneerAuthDesc">
+        성명을 선택하고 비밀번호(PIN)를 입력하세요.
+      </p>
+
+
+      <input
+        type="text"
+        id="pioneerNameSearch"
+        class="form-control mb-2"
+        placeholder="파이오니아 이름 검색"
+        oninput="filterPioneers()"
+        autocomplete="off"
+      >
+
+
+      <select
+        id="pioneerSelect"
+        class="form-select form-select-lg mb-3"
+        onchange="onPioneerSelectChanged()"
+      >
+        <option value="">파이오니아 성명 선택</option>
+      </select>
+
+
+      <input
+        type="password"
+        inputmode="numeric"
+        id="pioneerPin"
+        class="form-control form-control-lg text-center mb-2"
+        maxlength="6"
+        placeholder="PIN (4~6자리)"
+      >
+
+      <input
+        type="password"
+        inputmode="numeric"
+        id="pioneerPinConfirm"
+        class="form-control form-control-lg text-center mb-2"
+        maxlength="6"
+        placeholder="PIN 한 번 더 입력"
+        style="display:none;"
+      >
+
+
+      <div class="form-check text-start mb-3">
+
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="chkRememberPin"
+          checked
+        >
+
+        <label
+          class="form-check-label small text-muted"
+          for="chkRememberPin"
+          id="lblRememberPin"
+        >
+          이 기기에서 비밀번호(PIN) 기억하기
+        </label>
+
+      </div>
+
+
+      <button
+        class="btn btn-primary btn-lg w-100 fw-bold shadow"
+        id="btnPioneerLogin"
+        onclick="loadPioneerData()"
+      >
+        기록 조회하기
+      </button>
+
+    </div>
+
+
+    <div
+      id="pioneerRecordDisplay"
+      class="card p-3 p-md-4"
+      style="display:none;"
+    >
+
+      <!-- 상단 -->
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+
+        <div>
+          <span
+            class="badge bg-primary-subtle text-primary fw-bold mb-1"
+            id="badgePioneerRole"
+          >
+            정규 파이오니아
+          </span>
+
+          <h4
+            class="fw-bold text-dark mb-0"
+            id="pioneerNameHeader"
+          >
+            파이오니아 기록
+          </h4>
+        </div>
+
+
+        <button
+          class="btn btn-outline-secondary fw-bold px-3 py-2 shadow-sm"
+          id="btnPioneerBack"
+          onclick="resetPioneerView()"
+        >
+          ← 뒤로가기
+        </button>
+
+      </div>
+
+
+      <!-- 봉사연도 -->
+      <div class="card p-2 bg-light border-0 shadow-sm mb-3">
+
+        <div class="row g-2 align-items-center">
+
+          <div class="col-4 col-sm-3 text-center">
+
+            <label
+              for="pioneerYearFilter"
+              class="form-label fw-bold text-secondary mb-0"
+              id="lblPioneerYear"
+            >
+              📅 봉사연도
+            </label>
+
+          </div>
+
+
+          <div class="col-8 col-sm-9">
+
+            <select
+              id="pioneerYearFilter"
+              class="form-select form-select-lg fw-bold text-primary border-primary shadow-sm"
+              onchange="renderPioneerRecordTable()"
+            ></select>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- 현재월 수정 -->
+      <div
+        id="pioneerEditAlert"
+        class="alert alert-warning d-flex justify-content-between align-items-center mb-3 shadow-sm"
+        style="display:none;"
+      >
+
+        <span
+          id="pioneerEditText"
+          class="fw-bold"
+        >
+          이번 달 보고를 수정할 수 있습니다.
+        </span>
+
+        <button
+          class="btn btn-sm btn-dark fw-bold px-3"
+          onclick="openPioneerEditModal()"
+        >
+          수정하기
+        </button>
+
+      </div>
+
+
+      <!-- 12개월 기록 -->
+      <div
+        class="table-responsive table-pioneer-wrapper mb-3 rounded border shadow-sm"
+      >
+
+        <table
+          class="table table-bordered table-hover text-center align-middle mb-0"
+          style="font-size:0.92rem;"
+        >
+
+          <thead class="table-light">
+
+            <tr>
+              <th class="sticky-col-month nowrap" id="thMonth">봉사월</th>
+              <th class="nowrap" id="thStudies">연구</th>
+              <th class="nowrap" id="thHours">시간</th>
+              <th class="nowrap" id="thCredit">추가</th>
+
+              <th
+                class="nowrap"
+                id="thRemarks"
+                style="min-width:220px;"
+              >
+                사유 및 비고
+              </th>
+            </tr>
+
+          </thead>
+
+          <tbody id="pioneerRecordTable"></tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- 연간 합계 별도 카드 -->
+      <div
+        id="pioneerAnnualSummary"
+        class="card annual-summary-card p-3 mb-4"
+      >
+
+        <div
+          class="fw-bold text-primary mb-3"
+          id="annualSummaryTitle"
+        >
+          연간 합계
+        </div>
+
+
+        <div class="row g-2">
+
+          <div class="col-4 annual-summary-item">
+            <div
+              class="annual-summary-label"
+              id="annualHoursLabel"
+            >
+              봉사시간
+            </div>
+
+            <div
+              class="annual-summary-value text-primary"
+              id="annualHoursValue"
+            >
+              0
+            </div>
+          </div>
+
+
+          <div class="col-4 annual-summary-item">
+            <div
+              class="annual-summary-label"
+              id="annualCreditLabel"
+            >
+              추가 인정
+            </div>
+
+            <div
+              class="annual-summary-value text-success"
+              id="annualCreditValue"
+            >
+              0
+            </div>
+          </div>
+
+
+          <div class="col-4 annual-summary-item">
+            <div
+              class="annual-summary-label"
+              id="annualTotalLabel"
+            >
+              총 인정시간
+            </div>
+
+            <div
+              class="annual-summary-value text-dark"
+              id="annualTotalValue"
+            >
+              0
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- PIN 변경 -->
+      <div class="card p-3 p-md-4 bg-light border-0 shadow-sm">
+
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+
+          <h5
+            class="fw-bold text-primary mb-0"
+            id="txtPinChangeTitle"
+          >
+            🔐 비밀번호(PIN) 변경
+          </h5>
+
+          <span class="badge bg-secondary">
+            4~6자리
+          </span>
+
+        </div>
+
+
+        <div class="mb-3">
+
+          <label
+            class="form-label small fw-bold text-secondary mb-1"
+            id="lblPinCur"
+          >
+            현재 비밀번호
+          </label>
+
+          <input
+            type="password"
+        inputmode="numeric"
+            id="curPin"
+            class="form-control form-control-lg text-center"
+            maxlength="6"
+          >
+
+        </div>
+
+
+        <div class="mb-3">
+
+          <label
+            class="form-label small fw-bold text-secondary mb-1"
+            id="lblPinNew"
+          >
+            새 비밀번호 (4~6자리)
+          </label>
+
+          <input
+            type="password"
+        inputmode="numeric"
+            id="newPin"
+            class="form-control form-control-lg text-center"
+            maxlength="6"
+          >
+
+        </div>
+
+
+        <div class="mb-3">
+
+          <label
+            class="form-label small fw-bold text-secondary mb-1"
+            id="lblPinConfirm"
+          >
+            새 비밀번호 확인
+          </label>
+
+          <input
+            type="password"
+        inputmode="numeric"
+            id="confirmPin"
+            class="form-control form-control-lg text-center"
+            maxlength="6"
+          >
+
+        </div>
+
+
+        <button
+          class="btn btn-success btn-lg fw-bold w-100 shadow-sm"
+          id="btnChangePin"
+          onclick="submitChangePin()"
+        >
+          비밀번호 변경 완료
+        </button>
+
+      </div>
+
+      <div class="text-center mt-3">
+        <button
+          type="button"
+          class="btn btn-link text-secondary small"
+          id="btnPioneerLogout"
+          onclick="logoutPioneerDevice()"
+        >
+          이 기기에서 로그아웃
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<script src="assets/config.js"></script>
+<script src="assets/common.js"></script>
+<script>
+
+const i18n = {
+
+  ko: {
+    badge: yr => `${yr} 봉사연도`,
+
+    title: "회중 야외봉사 보고",
+
+    sec1: "1. 본인 확인",
+    sec2: "2. 봉사 활동 보고",
+
+    searchPh: "이름 검색 (검색어 입력 시 자동 필터링)",
+    pioneerSearchPh: "파이오니아 이름 검색 (자동 필터링)",
+
+    selectPub: "전도인을 선택하세요",
+    selectPio: "파이오니아 성명 선택",
+
+    tabReport: "야외봉사 보고",
+    tabPioneer: "파이오니아 개인 기록",
+
+    closedWaiting:
+      "⚠️ 이번 달 봉사보고는 아직 입력할 수 없습니다.<br><small class='text-muted'>매월 28일부터 입력할 수 있습니다.</small>",
+
+    closedPrevious:
+      "⚠️ 지난 봉사월의 보고 입력 기간이 종료되었습니다.<br><small class='text-muted'>다음 봉사월은 20일부터 표시되며 28일부터 입력할 수 있습니다.</small>",
+
+    partQ: "이번 달 야외 봉사에 참여하셨습니까?",
+    yes: "✓ 예 (참여함)",
+    no: "✕ 아니오",
+
+    studies: "사회한 개별 성서 연구 건수",
+    aux: "이번 달 보조 파이오니아 활동함",
+
+    hours: "봉사 시간 (필수)",
+    credit: "추가 인정 시간",
+
+    remarks: "비고 및 메모 (선택)",
+    remarksPh: "특이사항을 입력하세요",
+
+    submit: "보고서 제출하기",
+    submitUpdate: "수정하여 저장하기",
+    submitting: "제출 중...",
+
+    existingTitle: "🔐 기존 보고 본인 확인",
+    existingHasPin:
+      "이미 제출한 보고가 있습니다. 기존 내용을 확인하거나 수정하려면 PIN을 입력하세요.",
+    existingNoPin:
+      "이미 제출한 보고가 있습니다. 기존 내용을 보호하기 위해 먼저 사용할 PIN을 설정해 주세요.",
+
+    existingOpen: "기존 보고 열기",
+    existingSetPin: "PIN 설정 후 보고 열기",
+
+    pioneerTitle: "정규 파이오니아 기록 열람",
+    pioneerDesc: "성명을 선택하고 비밀번호(PIN)를 입력하세요.",
+    pioneerLogin: "기록 조회하기",
+
+    thMonth: "봉사월",
+    thHours: "시간",
+    thCredit: "추가",
+    thStudies: "연구",
+    thRemarks: "사유 및 비고",
+
+    annualTitle: "연간 합계",
+    annualHours: "봉사시간",
+    annualCredit: "추가 인정",
+    annualTotal: "총 인정시간",
+
+    pinTitle: "🔐 비밀번호(PIN) 변경",
+    pinCur: "현재 비밀번호",
+    pinNew: "새 비밀번호 (4~6자리)",
+    pinConfirm: "새 비밀번호 확인",
+    pinSubmit: "비밀번호 변경 완료",
+
+    rememberPin: "이 기기에서 비밀번호(PIN) 기억하기",
+
+    pioneerYearOpt: yr => `${yr} 봉사연도`,
+
+    btnBack: "← 뒤로가기",
+    lblYearFilter: "📅 봉사연도",
+    pioneerBadge: "정규 파이오니아",
+
+    monthName: m => `${m}월`
+  },
+
+
+  ru: {
+    badge: yr => `${yr} служебный год`,
+
+    title: "Отчёт о служении",
+
+    sec1: "1. Подтверждение личности",
+    sec2: "2. Отчёт о служении",
+
+    searchPh: "Поиск имени",
+    pioneerSearchPh: "Поиск пионера",
+
+    selectPub: "Выберите возвещателя",
+    selectPio: "Выберите пионера",
+
+    tabReport: "Отчёт о служении",
+    tabPioneer: "Личные записи пионера",
+
+    closedWaiting:
+      "⚠️ Отчёт за этот месяц пока нельзя вводить.<br><small class='text-muted'>Приём отчётов начинается 28-го числа.</small>",
+
+    closedPrevious:
+      "⚠️ Период сдачи предыдущего отчёта завершён.<br><small class='text-muted'>Следующий месяц можно будет вводить с 28-го числа.</small>",
+
+    partQ: "Участвовали ли вы в служении в этом месяце?",
+    yes: "✓ Да",
+    no: "✕ Нет",
+
+    studies: "Количество изучений Библии",
+    aux: "Служил подсобным пионером",
+
+    hours: "Часы служения",
+    credit: "Дополнительные зачётные часы",
+
+    remarks: "Примечания",
+    remarksPh: "Введите примечания",
+
+    submit: "Отправить отчёт",
+    submitUpdate: "Изменить и сохранить",
+    submitting: "Отправка...",
+
+    existingTitle: "🔐 Подтверждение личности",
+    existingHasPin:
+      "Отчёт уже был отправлен. Введите PIN, чтобы посмотреть или изменить его.",
+    existingNoPin:
+      "Отчёт уже был отправлен. Сначала установите PIN для защиты записи.",
+
+    existingOpen: "Открыть отчёт",
+    existingSetPin: "Установить PIN и открыть",
+
+    pioneerTitle: "Записи общего пионера",
+    pioneerDesc: "Выберите имя и введите PIN-код.",
+    pioneerLogin: "Посмотреть записи",
+
+    thMonth: "Месяц",
+    thHours: "Часы",
+    thCredit: "Зачёт",
+    thStudies: "Изучения",
+    thRemarks: "Примечания",
+
+    annualTitle: "Итого за год",
+    annualHours: "Часы",
+    annualCredit: "Зачёт",
+    annualTotal: "Всего",
+
+    pinTitle: "🔐 Изменить PIN",
+    pinCur: "Текущий PIN",
+    pinNew: "Новый PIN (4–6 цифр)",
+    pinConfirm: "Повторите новый PIN",
+    pinSubmit: "Изменить PIN",
+
+    rememberPin: "Запомнить PIN на этом устройстве",
+
+    pioneerYearOpt: yr => `${yr} служебный год`,
+
+    btnBack: "← Назад",
+    lblYearFilter: "📅 Служебный год",
+    pioneerBadge: "Общий пионер",
+
+    monthName: m => {
+      const arr = [
+        "",
+        "Янв", "Фев", "Мар", "Апр",
+        "Май", "Июн", "Июл", "Авг",
+        "Сен", "Окт", "Ноя", "Дек"
+      ];
+
+      return arr[m];
+    }
+  },
+
+
+  en: {
+    badge: yr => `${yr} Service Year`,
+
+    title: "Field Service Report",
+
+    sec1: "1. Identity Verification",
+    sec2: "2. Service Report",
+
+    searchPh: "Search name",
+    pioneerSearchPh: "Search pioneer",
+
+    selectPub: "Select Publisher",
+    selectPio: "Select Pioneer",
+
+    tabReport: "Field Service Report",
+    tabPioneer: "Pioneer Personal Records",
+
+    closedWaiting:
+      "⚠️ This month's report is not open yet.<br><small class='text-muted'>Reporting opens on the 28th of each month.</small>",
+
+    closedPrevious:
+      "⚠️ The previous reporting period has closed.<br><small class='text-muted'>The next month can be entered from the 28th.</small>",
+
+    partQ: "Did you participate in field service this month?",
+    yes: "✓ Yes",
+    no: "✕ No",
+
+    studies: "Bible studies conducted",
+    aux: "Auxiliary Pioneer this month",
+
+    hours: "Service Hours",
+    credit: "Credit Hours",
+
+    remarks: "Remarks / Notes",
+    remarksPh: "Enter remarks",
+
+    submit: "Submit Report",
+    submitUpdate: "Update & Save",
+    submitting: "Submitting...",
+
+    existingTitle: "🔐 Verify Existing Report",
+    existingHasPin:
+      "A report has already been submitted. Enter your PIN to view or edit it.",
+    existingNoPin:
+      "A report has already been submitted. Set a PIN first to protect the existing record.",
+
+    existingOpen: "Open Existing Report",
+    existingSetPin: "Set PIN & Open Report",
+
+    pioneerTitle: "Regular Pioneer Records",
+    pioneerDesc: "Select your name and enter your PIN.",
+    pioneerLogin: "View Records",
+
+    thMonth: "Month",
+    thHours: "Hours",
+    thCredit: "Credit",
+    thStudies: "Studies",
+    thRemarks: "Remarks",
+
+    annualTitle: "Annual Total",
+    annualHours: "Service Hours",
+    annualCredit: "Credit",
+    annualTotal: "Total",
+
+    pinTitle: "🔐 Change PIN",
+    pinCur: "Current PIN",
+    pinNew: "New PIN (4–6 digits)",
+    pinConfirm: "Confirm New PIN",
+    pinSubmit: "Update PIN",
+
+    rememberPin: "Remember PIN on this device",
+
+    pioneerYearOpt: yr => `${yr} Service Year`,
+
+    btnBack: "← Back",
+    lblYearFilter: "📅 Service Year",
+    pioneerBadge: "Regular Pioneer",
+
+    monthName: m => {
+      const arr = [
+        "",
+        "Jan", "Feb", "Mar", "Apr",
+        "May", "Jun", "Jul", "Aug",
+        "Sep", "Oct", "Nov", "Dec"
+      ];
+
+      return arr[m];
+    }
+  }
+};
+
+/* =========================================================
+   v2 추가 문구 (기존 i18n 에 덧붙임)
+   ========================================================= */
+
+Object.assign(i18n.ko, {
+  rememberPin: "이 기기에서 로그인 유지 (다음부터 PIN 없이 열람)",
+  pinConfirmPh: "PIN 한 번 더 입력",
+  setPinAndView: "PIN 만들고 기록 보기",
+  needPinSetup: "아직 비밀번호(PIN)가 없습니다. 사용할 PIN(숫자 4~6자리)을 두 번 입력하세요.",
+  pinMismatch: "PIN 확인이 일치하지 않습니다.",
+  pinFormat: "PIN은 숫자 4~6자리로 입력하세요.",
+  logoutDevice: "이 기기에서 로그아웃",
+  logoutDone: "이 기기에서 로그아웃했습니다.",
+  canEdit: m => `${m} 보고를 수정할 수 있습니다.`,
+  submitDone: "【 제출 성공 | Отчёт успешно отправлен 】",
+  submitFail: "【 제출 실패 | Ошибка отправки 】",
+  authFail: "【 인증 실패 | Ошибка авторизации 】",
+  loadFail: "서버에서 정보를 불러오지 못했습니다. 잠시 후 다시 열어 주세요.",
+  pinChanged: "비밀번호가 변경되었습니다.",
+  curPinRequired: "현재 비밀번호를 입력하세요.",
+  hoursRequired: "봉사 시간을 입력하세요.",
+  credit: "추가 인정 시간",
+  creditAdd: "+ 사유 추가",
+  creditHoursPh: "시간",
+  creditOtherPh: "기타 사유"
+});
+
+Object.assign(i18n.ru, {
+  rememberPin: "Оставаться в системе на этом устройстве",
+  pinConfirmPh: "Повторите PIN",
+  setPinAndView: "Создать PIN и открыть",
+  needPinSetup: "PIN ещё не установлен. Введите новый PIN (4–6 цифр) два раза.",
+  pinMismatch: "PIN-коды не совпадают.",
+  pinFormat: "PIN должен состоять из 4–6 цифр.",
+  logoutDevice: "Выйти на этом устройстве",
+  logoutDone: "Вы вышли на этом устройстве.",
+  canEdit: m => `Можно изменить отчёт за ${m}.`,
+  submitDone: "【 Отчёт успешно отправлен 】",
+  submitFail: "【 Ошибка отправки 】",
+  authFail: "【 Ошибка авторизации 】",
+  loadFail: "Не удалось загрузить данные. Попробуйте позже.",
+  pinChanged: "PIN изменён.",
+  curPinRequired: "Введите текущий PIN.",
+  hoursRequired: "Введите часы служения.",
+  creditAdd: "+ Добавить",
+  creditHoursPh: "Часы",
+  creditOtherPh: "Другая причина"
+});
+
+Object.assign(i18n.en, {
+  rememberPin: "Stay signed in on this device",
+  pinConfirmPh: "Enter PIN again",
+  setPinAndView: "Create PIN & View",
+  needPinSetup: "No PIN yet. Enter a new PIN (4–6 digits) twice.",
+  pinMismatch: "PINs do not match.",
+  pinFormat: "PIN must be 4–6 digits.",
+  logoutDevice: "Sign out on this device",
+  logoutDone: "Signed out on this device.",
+  canEdit: m => `You can edit the ${m} report.`,
+  submitDone: "【 Report submitted 】",
+  submitFail: "【 Submission failed 】",
+  authFail: "【 Authentication failed 】",
+  loadFail: "Could not load data. Please try again later.",
+  pinChanged: "PIN changed.",
+  curPinRequired: "Enter your current PIN.",
+  hoursRequired: "Enter service hours.",
+  creditAdd: "+ Add",
+  creditHoursPh: "Hours",
+  creditOtherPh: "Other reason"
+});
+
+/* 추가 인정 사유 번역 (서버 목록에 없는 사유는 그대로 표시) */
+const creditTranslations = {
+  "베델": { ru: "Вефиль", en: "Bethel" },
+  "대회장": { ru: "Зал конгрессов", en: "Assembly Hall" },
+  "LDC": { ru: "МПСО", en: "LDC" },
+  "순회대회": { ru: "Районный конгресс", en: "Circuit Assembly" },
+  "지역대회": { ru: "Региональный конгресс", en: "Regional Convention" },
+  "파이오니아 학교": { ru: "Школа пионерского служения", en: "Pioneer School" },
+  "회관 유지보수": { ru: "Обслуживание Зала Царства", en: "Kingdom Hall Maintenance" },
+  "기타": { ru: "Другое", en: "Other" }
+};
+
+function creditLabel(reason) {
+  const t = creditTranslations[reason];
+  return currentLang !== "ko" && t && t[currentLang] ? t[currentLang] : reason;
+}
+
+
+/* =========================================================
+   상태
+   ========================================================= */
+
+let currentLang = "ko";
+let publishers = [];
+let creditReasons = ["베델", "대회장", "LDC", "순회대회", "지역대회", "파이오니아 학교", "회관 유지보수", "기타"];
+
+let selectedPub = null;
+let reportCtx = null;          // 서버가 준 보고 화면 정보 (form, exists, hasPin, authenticated ...)
+
+let activeReportMonth = "";
+let isPeriodOpen = false;
+let isTestMode = false;
+let reportPhase = "";
+
+let selectedPioneer = null;
+let pioneerAllRecords = null;
+let pioneerServiceYears = [];
+let pioneerCurrentSY = 0;
+let pioneerNeedsSetup = false;
+
+const t = () => i18n[currentLang];
+const api = (action, payload) => JW.api(action, payload);
+
+
+/* =========================================================
+   봉사연도 표시
+   ========================================================= */
+
+function getCurrentServiceYear() {
+  return JW.serviceYearOf(JW.ym());
+}
+
+function updateServiceYearBadge() {
+  document.getElementById("badgeServiceYear").innerText =
+    t().badge(activeReportMonth ? JW.serviceYearOf(activeReportMonth) : getCurrentServiceYear());
+}
+
+
+/* =========================================================
+   시작
+   ========================================================= */
+
+window.onload = async function () {
+
+  const userLang = (navigator.language || "").toLowerCase();
+  setLanguage(userLang.startsWith("ru") ? "ru" : userLang.startsWith("en") ? "en" : "ko");
+
+  resetCreditRows();
+  lockReportEntry();
+
+  const [info, dir] = await Promise.all([
+    api("getActiveReportMonthInfo"),
+    api("getPublisherDirectory")
+  ]);
+
+  if (!info.success || !dir.success) {
+    alert((info.success ? dir.message : info.message) || t().loadFail);
+    return;
+  }
+
+  activeReportMonth = info.reportMonth || "";
+  isPeriodOpen = info.isOpen === true;
+  isTestMode = info.isTestMode === true;
+  reportPhase = info.phase || "";
+
+  if (isTestMode && Array.isArray(info.testMonths)) {
+    const sel = document.getElementById("testMonthSelect");
+    sel.innerHTML = "";
+    info.testMonths.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.text = m;
+      if (m === activeReportMonth) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    document.getElementById("testModeBox").style.display = "block";
+  }
+
+  updateMonthDisplayByStr(activeReportMonth);
+  updateServiceYearBadge();
+  updateReportingPeriodUI();
+
+  publishers = dir.publishers || [];
+  if (Array.isArray(dir.creditReasons) && dir.creditReasons.length) {
+    creditReasons = dir.creditReasons;
+  }
+  populatePublisherDropdowns();
+  resetCreditRows();
+};
+
+
+/* =========================================================
+   제출 기간 UI
+   ========================================================= */
+
+function updateReportingPeriodUI() {
+  const alertBox = document.getElementById("closedAlert");
+
+  if (isPeriodOpen || isTestMode) {
+    alertBox.style.display = "none";
+    return;
+  }
+
+  alertBox.innerHTML = reportPhase === "CURRENT_WAITING" ? t().closedWaiting : t().closedPrevious;
+  alertBox.style.display = "block";
+  lockReportEntry();
+}
+
+function setEntryLocked(locked) {
+  const card = document.getElementById("reportEntryCard");
+  card.classList.toggle("report-locked", locked);
+  card.querySelectorAll("input, textarea, select, button").forEach(el => { el.disabled = locked; });
+}
+
+function lockReportEntry() {
+  setEntryLocked(true);
+}
+
+function unlockReportEntry() {
+  if (!isPeriodOpen && !isTestMode) {
+    lockReportEntry();
+    return;
+  }
+  setEntryLocked(false);
+}
+
+
+/* =========================================================
+   테스트 월
+   ========================================================= */
+
+async function onTestMonthChanged() {
+  activeReportMonth = document.getElementById("testMonthSelect").value;
+  updateMonthDisplayByStr(activeReportMonth);
+  updateServiceYearBadge();
+  if (selectedPub) await loadReportContext();
+}
+
+
+/* =========================================================
+   월 표시
+   ========================================================= */
+
+function updateMonthDisplayByStr(ymStr) {
+  if (!ymStr) return;
+  const [year, month] = ymStr.split("-").map(Number);
+  let txt = `${year}년 ${month}월`;
+
+  if (currentLang === "en") {
+    const names = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
+    txt = `${names[month - 1]} ${year}`;
+  } else if (currentLang === "ru") {
+    const names = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+    txt = `${names[month - 1]} ${year} года`;
+  }
+
+  document.getElementById("txtCurrentMonth").innerText = txt;
+}
+
+
+/* =========================================================
+   언어
+   ========================================================= */
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = text;
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+
+  document.querySelectorAll(".btn-group .btn").forEach(b => b.classList.remove("btn-primary", "text-white"));
+  document.getElementById("btn" + lang.charAt(0).toUpperCase() + lang.slice(1)).classList.add("btn-primary", "text-white");
+
+  const L = t();
+  updateServiceYearBadge();
+  if (activeReportMonth) updateMonthDisplayByStr(activeReportMonth);
+
+  setText("txtTitle", L.title);
+  setText("txtSec1", L.sec1);
+  setText("txtSec2", L.sec2);
+  document.getElementById("nameSearch").placeholder = L.searchPh;
+  document.getElementById("pioneerNameSearch").placeholder = L.pioneerSearchPh;
+  setText("tabBtnReport", L.tabReport);
+  setText("tabBtnPioneer", L.tabPioneer);
+  setText("lblParticipated", L.partQ);
+  setText("btnYes", L.yes);
+  setText("btnNo", L.no);
+  setText("lblStudies", L.studies);
+  setText("lblAux", L.aux);
+  setText("lblHours", L.hours);
+  setText("lblCredit", L.credit);
+  setText("btnAddCredit", L.creditAdd);
+  setText("lblRemarks", L.remarks);
+  document.getElementById("remarks").placeholder = L.remarksPh;
+  setText("pioneerAuthTitle", L.pioneerTitle);
+  setText("pioneerAuthDesc", pioneerNeedsSetup ? L.needPinSetup : L.pioneerDesc);
+  setText("lblRememberPin", L.rememberPin);
+  setText("btnPioneerLogin", pioneerNeedsSetup ? L.setPinAndView : L.pioneerLogin);
+  document.getElementById("pioneerPinConfirm").placeholder = L.pinConfirmPh;
+  setText("thMonth", L.thMonth);
+  setText("thHours", L.thHours);
+  setText("thCredit", L.thCredit);
+  setText("thStudies", L.thStudies);
+  setText("thRemarks", L.thRemarks);
+  setText("annualSummaryTitle", L.annualTitle);
+  setText("annualHoursLabel", L.annualHours);
+  setText("annualCreditLabel", L.annualCredit);
+  setText("annualTotalLabel", L.annualTotal);
+  setText("btnPioneerBack", L.btnBack);
+  setText("lblPioneerYear", L.lblYearFilter);
+  setText("badgePioneerRole", L.pioneerBadge);
+  setText("txtPinChangeTitle", L.pinTitle);
+  setText("lblPinCur", L.pinCur);
+  setText("lblPinNew", L.pinNew);
+  setText("lblPinConfirm", L.pinConfirm);
+  document.getElementById("curPin").placeholder = L.pinCur;
+  document.getElementById("newPin").placeholder = L.pinNew;
+  document.getElementById("confirmPin").placeholder = L.pinConfirm;
+  setText("btnChangePin", L.pinSubmit);
+  setText("btnPioneerLogout", L.logoutDevice);
+  setText("existingAuthTitle", L.existingTitle);
+
+  populatePublisherDropdowns();
+  relabelCreditRows();
+
+  if (pioneerAllRecords) {
+    fillPioneerYearFilter();
+    renderPioneerRecordTable();
+  }
+  if (!isPeriodOpen && !isTestMode && activeReportMonth) updateReportingPeriodUI();
+  if (reportCtx && reportCtx.exists && !reportCtx.authenticated) renderExistingReportAuthBox();
+  updateSubmitButtonText();
+}
+
+
+/* =========================================================
+   탭
+   ========================================================= */
+
+function switchMainTab(tab) {
+  document.getElementById("tabReportSection").style.display = tab === "report" ? "block" : "none";
+  document.getElementById("tabPioneerSection").style.display = tab === "pioneer" ? "block" : "none";
+  document.getElementById("tabBtnReport").classList.toggle("active", tab === "report");
+  document.getElementById("tabBtnPioneer").classList.toggle("active", tab === "pioneer");
+}
+
+
+/* =========================================================
+   이름 목록 (이름 + 집단만)
+   ========================================================= */
+
+function getDisplayName(p) {
+  if (currentLang === "ru") return p.nameRu || p.nameKo || p.nameEn;
+  if (currentLang === "en") return p.nameEn || p.nameKo || p.nameRu;
+  return p.nameKo || p.nameRu || p.nameEn;
+}
+
+function matchesQuery(p, q) {
+  return !q || [p.nameKo, p.nameRu, p.nameEn].some(n => n && n.toLowerCase().includes(q));
+}
+
+function fillSelect(select, list, placeholder, keepValue) {
+  select.innerHTML = `<option value="">${JW.esc(placeholder)}</option>`;
+  list.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.text = `${getDisplayName(p)} (${p.group})`;
+    select.appendChild(opt);
+  });
+  if (keepValue && list.some(p => p.id === keepValue)) select.value = keepValue;
+}
+
+function populatePublisherDropdowns() {
+  const pubSel = document.getElementById("publisherSelect");
+  const pioSel = document.getElementById("pioneerSelect");
+  fillSelect(pubSel, publishers, t().selectPub, pubSel.value);
+  fillSelect(pioSel, publishers.filter(p => p.isPioneer), t().selectPio, pioSel.value);
+}
+
+function filterPublishers() {
+  const q = document.getElementById("nameSearch").value.toLowerCase().trim();
+  const select = document.getElementById("publisherSelect");
+  const filtered = publishers.filter(p => matchesQuery(p, q));
+  fillSelect(select, filtered, t().selectPub);
+  if (filtered.length === 1) {
+    select.value = filtered[0].id;
+    onPublisherSelectChanged();
+  }
+}
+
+function filterPioneers() {
+  const q = document.getElementById("pioneerNameSearch").value.toLowerCase().trim();
+  const select = document.getElementById("pioneerSelect");
+  const filtered = publishers.filter(p => p.isPioneer && matchesQuery(p, q));
+  fillSelect(select, filtered, t().selectPio);
+  if (filtered.length === 1) {
+    select.value = filtered[0].id;
+    onPioneerSelectChanged();
+  }
+}
+
+
+/* =========================================================
+   전도인 선택 → 서버에 입력 칸 구성과 기존 보고 여부 확인
+   ========================================================= */
+
+async function onPublisherSelectChanged() {
+  const pubId = document.getElementById("publisherSelect").value;
+  selectedPub = publishers.find(p => p.id === pubId) || null;
+  reportCtx = null;
+  hideExistingAuthBox();
+  resetReportFields();
+
+  const badge = document.getElementById("selectedBadge");
+  if (!selectedPub) {
+    badge.style.display = "none";
+    lockReportEntry();
+    return;
+  }
+
+  badge.innerText = `✓ ${getDisplayName(selectedPub)}`;
+  badge.style.display = "block";
+
+  await loadReportContext();
+}
+
+/**
+ * pin 을 주면 PIN 으로, 아니면 이 기기에 저장된 로그인으로 기존 보고를 연다.
+ */
+async function loadReportContext(pin) {
+  if (!selectedPub) return;
+  const pubId = selectedPub.id;
+
+  lockReportEntry();
+
+  const res = await api("getReportContext", {
+    pubId: pubId,
+    month: isTestMode ? activeReportMonth : undefined,
+    token: JW.getPubToken(pubId) || undefined,
+    pin: pin || undefined
+  });
+
+  // 응답이 오는 사이 다른 이름을 고른 경우 무시
+  if (!selectedPub || selectedPub.id !== pubId) return;
+
+  if (!res.success) {
+    if (pin && (res.code === "PIN_WRONG" || res.code === "PIN_LOCKED")) {
+      alert(`${t().authFail}\n\n${res.message}`);
+      renderExistingReportAuthBox();
+      return;
+    }
+    alert(res.message);
+    return;
+  }
+
+  reportCtx = res;
+  if (res.token) JW.setPubToken(pubId, res.token);
+  if (res.tokenExpired) JW.clearPubToken(pubId);
+
+  configureRoleFields(res.form, false);
+
+  if (res.periodClosed) {
+    lockReportEntry();
+    return;
+  }
+
+  if (!res.exists) {
+    hideExistingAuthBox();
+    resetReportFields();
+    configureRoleFields(res.form, false);
+    unlockReportEntry();
+    updateSubmitButtonText();
+    return;
+  }
+
+  if (!res.authenticated) {
+    resetReportFields();
+    configureRoleFields(res.form, false);
+    lockReportEntry();
+    renderExistingReportAuthBox();
+    return;
+  }
+
+  hideExistingAuthBox();
+  fillExistingReport(res.report, res.form);
+  unlockReportEntry();
+  configureRoleFields(res.form, res.report.wasAux);
+  updateSubmitButtonText();
+}
+
+function updateSubmitButtonText() {
+  const btn = document.getElementById("submitBtn");
+  if (!btn) return;
+  btn.innerText = reportCtx && reportCtx.exists && reportCtx.authenticated ? t().submitUpdate : t().submit;
+}
+
+
+/* =========================================================
+   역할별 입력 칸 (서버가 정해 줌)
+   ========================================================= */
+
+function configureRoleFields(form, wasAux) {
+  if (!form) return;
+
+  document.getElementById("auxContainer").style.display = form.showAux ? "block" : "none";
+  document.getElementById("creditContainer").style.display = form.showCredit ? "block" : "none";
+
+  if (form.isPioneer) {
+    document.getElementById("hoursContainer").style.display = "block";
+  } else {
+    document.getElementById("isAux").checked = wasAux === true || form.auxDefault === true;
+    toggleHours();
+  }
+
+  const badge = document.getElementById("selectedBadge");
+  if (selectedPub && form.roleLabel) {
+    badge.innerText = `✓ ${getDisplayName(selectedPub)} (${form.roleLabel})`;
+  }
+}
+
+
+/* =========================================================
+   기존 보고 본인 확인
+   ========================================================= */
+
+function hideExistingAuthBox() {
+  document.getElementById("existingReportAuthBox").style.display = "none";
+  document.getElementById("existingReportPin").value = "";
+  document.getElementById("existingReportPinConfirm").value = "";
+}
+
+function renderExistingReportAuthBox() {
+  const L = t();
+  const hasPin = reportCtx && reportCtx.hasPin;
+
+  setText("existingAuthTitle", L.existingTitle);
+  setText("existingAuthMessage", hasPin ? L.existingHasPin : L.existingNoPin);
+  document.getElementById("existingReportPin").value = "";
+  document.getElementById("existingReportPinConfirm").value = "";
+  document.getElementById("existingReportPinConfirm").style.display = hasPin ? "none" : "block";
+  document.getElementById("existingReportPinConfirm").placeholder = L.pinConfirmPh;
+  setText("btnExistingReportAuth", hasPin ? L.existingOpen : L.existingSetPin);
+  document.getElementById("existingReportAuthBox").style.display = "block";
+}
+
+async function authenticateExistingReport() {
+  if (!selectedPub || !reportCtx || !reportCtx.exists) return;
+
+  const pin = document.getElementById("existingReportPin").value.trim();
+  if (!/^\d{4,6}$/.test(pin)) {
+    alert(t().pinFormat);
+    return;
+  }
+
+  const btn = document.getElementById("btnExistingReportAuth");
+  btn.disabled = true;
+
+  try {
+    if (!reportCtx.hasPin) {
+      const confirmPin = document.getElementById("existingReportPinConfirm").value.trim();
+      if (pin !== confirmPin) {
+        alert(t().pinMismatch);
+        return;
+      }
+      const setRes = await api("setupMyPin", { pubId: selectedPub.id, newPin: pin });
+      if (!setRes.success) {
+        alert(setRes.message);
+        return;
+      }
+      JW.setPubToken(selectedPub.id, setRes.token);
+      await loadReportContext();
+      return;
+    }
+
+    await loadReportContext(pin);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+
+/* =========================================================
+   기존 보고 채우기 (서버가 사용자 메모와 추가 인정 목록을 나눠서 줌)
+   ========================================================= */
+
+function fillExistingReport(r) {
+  const isPart = r.participated === "예";
+  document.getElementById("partYes").checked = isPart;
+  document.getElementById("partNo").checked = !isPart;
+  toggleParticipation(isPart);
+
+  document.getElementById("actualHours").value = Number(r.hours) || 0;
+  document.getElementById("bibleStudies").value = Number(r.studies) || 0;
+  document.getElementById("remarks").value = r.userRemarks || "";
+
+  restoreCreditRows(r.creditItems, Number(r.credit) || 0);
+}
+
+function resetReportFields() {
+  document.getElementById("partYes").checked = true;
+  document.getElementById("partNo").checked = false;
+  toggleParticipation(true);
+  document.getElementById("actualHours").value = "";
+  document.getElementById("bibleStudies").value = "0";
+  document.getElementById("remarks").value = "";
+  document.getElementById("isAux").checked = false;
+  resetCreditRows();
+}
+
+
+/* =========================================================
+   봉사 참여 / 시간
+   ========================================================= */
+
+function toggleParticipation(isYes) {
+  document.getElementById("activeFields").style.display = isYes ? "block" : "none";
+}
+
+function toggleHours() {
+  const pioneer = reportCtx && reportCtx.form && reportCtx.form.isPioneer;
+  document.getElementById("hoursContainer").style.display =
+    pioneer || document.getElementById("isAux").checked ? "block" : "none";
+}
+
+
+/* =========================================================
+   추가 인정 시간 (사유 목록은 서버 설정)
+   ========================================================= */
+
+function resetCreditRows() {
+  document.getElementById("creditRowsContainer").innerHTML = "";
+  addCreditRow();
+}
+
+function addCreditRow(initialHours, initialReason) {
+  initialHours = initialHours || 0;
+  initialReason = initialReason || creditReasons[0] || "기타";
+
+  const container = document.getElementById("creditRowsContainer");
+  const rowId = "cr_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+  const known = creditReasons.includes(initialReason);
+
+  const options = creditReasons.map(r =>
+    `<option value="${JW.esc(r)}" ${r === (known ? initialReason : "기타") ? "selected" : ""}>${JW.esc(creditLabel(r))}</option>`
+  ).join("");
+
+  const div = document.createElement("div");
+  div.className = "row g-2 mb-2 credit-row";
+  div.id = rowId;
+  div.innerHTML = `
+    <div class="col-4">
+      <input type="number" class="form-control credit-val" min="0" value="${Number(initialHours) || 0}" placeholder="${JW.esc(t().creditHoursPh)}">
+    </div>
+    <div class="col-6">
+      <select class="form-select credit-reason-sel" onchange="toggleCustomReasonInput('${rowId}')">${options}</select>
+      <input type="text" class="form-control form-control-sm mt-1 credit-custom-text" placeholder="${JW.esc(t().creditOtherPh)}" style="display:none;">
+    </div>
+    <div class="col-2">
+      <button type="button" class="btn btn-outline-danger w-100" onclick="document.getElementById('${rowId}').remove()">✕</button>
+    </div>`;
+  container.appendChild(div);
+
+  if (!known) {
+    const custom = div.querySelector(".credit-custom-text");
+    custom.value = initialReason;
+    custom.style.display = "block";
+  } else {
+    toggleCustomReasonInput(rowId);
+  }
+}
+
+function relabelCreditRows() {
+  document.querySelectorAll(".credit-reason-sel option").forEach(o => { o.text = creditLabel(o.value); });
+}
+
+function restoreCreditRows(items, totalCredit) {
+  document.getElementById("creditRowsContainer").innerHTML = "";
+  if (Array.isArray(items) && items.length) {
+    items.forEach(it => addCreditRow(it.hours, it.reason));
+    return;
+  }
+  if (totalCredit > 0) {
+    addCreditRow(totalCredit, "기타");
+    return;
+  }
+  addCreditRow();
+}
+
+function toggleCustomReasonInput(rowId) {
+  const row = document.getElementById(rowId);
+  const sel = row.querySelector(".credit-reason-sel").value;
+  row.querySelector(".credit-custom-text").style.display = sel === "기타" ? "block" : "none";
+}
+
+function collectCreditItems() {
+  const items = [];
+  document.querySelectorAll(".credit-row").forEach(row => {
+    const hours = Number(row.querySelector(".credit-val").value) || 0;
+    let reason = row.querySelector(".credit-reason-sel").value;
+    if (reason === "기타") {
+      const custom = row.querySelector(".credit-custom-text").value.trim();
+      if (custom) reason = custom;
+    }
+    if (hours > 0) items.push({ reason: reason, hours: hours });
+  });
+  return items;
+}
+
+
+/* =========================================================
+   보고 제출
+   ========================================================= */
+
+async function submitServiceReport() {
+  if (!selectedPub || !reportCtx) return;
+
+  if (!isPeriodOpen && !isTestMode) {
+    updateReportingPeriodUI();
+    return;
+  }
+
+  if (reportCtx.exists && !reportCtx.authenticated) {
+    renderExistingReportAuthBox();
+    return;
+  }
+
+  const participated = document.getElementById("partYes").checked ? "예" : "아니오";
+  const isAux = document.getElementById("isAux").checked;
+  const needsHours = participated === "예" && (reportCtx.form.isPioneer || isAux);
+  const hoursVal = document.getElementById("actualHours").value;
+
+  if (needsHours && hoursVal === "") {
+    alert(t().hoursRequired);
+    document.getElementById("actualHours").focus();
+    return;
+  }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.innerText = t().submitting;
+
+  const pubId = selectedPub.id;
+  const res = await api("submitReport", {
+    pubId: pubId,
+    month: isTestMode ? activeReportMonth : undefined,
+    participated: participated,
+    isAux: isAux,
+    hours: participated === "예" ? Number(hoursVal) || 0 : 0,
+    studies: participated === "예" ? Number(document.getElementById("bibleStudies").value) || 0 : 0,
+    creditItems: participated === "예" && reportCtx.form.showCredit ? collectCreditItems() : [],
+    remarks: document.getElementById("remarks").value,
+    token: JW.getPubToken(pubId) || undefined
+  });
+
+  btn.disabled = false;
+
+  if (res.success) {
+    if (res.token) JW.setPubToken(pubId, res.token);
+    alert(`${t().submitDone}\n\n${res.message}` + (res.warnings && res.warnings.length ? "\n\n" + res.warnings.join("\n") : ""));
+    // 제출 완료: 입력란을 잠그고, 다시 열려면 이름을 다시 고르면 됨
+    reportCtx.exists = true;
+    reportCtx.authenticated = false;
+    lockReportEntry();
+    updateSubmitButtonText();
+    return;
+  }
+
+  alert(`${t().submitFail}\n\n${res.message}`);
+
+  if (res.code === "PIN_REQUIRED" || res.code === "PIN_SETUP") {
+    reportCtx.exists = true;
+    reportCtx.authenticated = false;
+    reportCtx.hasPin = res.code === "PIN_REQUIRED";
+    JW.clearPubToken(pubId);
+    lockReportEntry();
+    renderExistingReportAuthBox();
+    return;
+  }
+
+  unlockReportEntry();
+  updateSubmitButtonText();
+}
+
+
+/* =========================================================
+   정규 파이오니아 개인 기록
+   ========================================================= */
+
+function setPioneerSetupMode(on) {
+  pioneerNeedsSetup = on;
+  document.getElementById("pioneerPinConfirm").style.display = on ? "block" : "none";
+  document.getElementById("pioneerPinConfirm").value = "";
+  setText("pioneerAuthDesc", on ? t().needPinSetup : t().pioneerDesc);
+  setText("btnPioneerLogin", on ? t().setPinAndView : t().pioneerLogin);
+}
+
+function onPioneerSelectChanged() {
+  setPioneerSetupMode(false);
+  document.getElementById("pioneerPin").value = "";
+  const id = document.getElementById("pioneerSelect").value;
+  // 이 기기에 로그인이 남아 있으면 PIN 없이 바로 열기
+  if (id && JW.getPubToken(id)) loadPioneerData();
+}
+
+async function loadPioneerData() {
+  const pioId = document.getElementById("pioneerSelect").value;
+  if (!pioId) {
+    alert(t().selectPio);
+    return;
+  }
+
+  const pin = document.getElementById("pioneerPin").value.trim();
+  const remember = document.getElementById("chkRememberPin").checked;
+
+  // PIN 처음 만들기
+  if (pioneerNeedsSetup) {
+    const confirmPin = document.getElementById("pioneerPinConfirm").value.trim();
+    if (!/^\d{4,6}$/.test(pin)) { alert(t().pinFormat); return; }
+    if (pin !== confirmPin) { alert(t().pinMismatch); return; }
+    const setRes = await api("setupMyPin", { pubId: pioId, newPin: pin });
+    if (!setRes.success) { alert(setRes.message); return; }
+    JW.setPubToken(pioId, setRes.token, remember);
+    setPioneerSetupMode(false);
+  }
+
+  const token = JW.getPubToken(pioId);
+  const res = await api("getPioneerYearlyRecord", {
+    pubId: pioId,
+    token: token || undefined,
+    pin: !token && pin ? pin : undefined
+  });
+
+  if (!res.success) {
+    if (res.code === "PIN_SETUP") {
+      setPioneerSetupMode(true);
+      return;
+    }
+    if (token && (res.code === "PIN_REQUIRED")) {
+      // 저장된 로그인이 만료됨 → PIN 입력 받기
+      JW.clearPubToken(pioId);
+      if (pin) return loadPioneerData();
+      document.getElementById("pioneerPin").focus();
+      return;
+    }
+    alert(`${t().authFail}\n\n${res.message}`);
+    return;
+  }
+
+  if (res.token) JW.setPubToken(pioId, res.token, remember);
+  document.getElementById("pioneerPin").value = "";
+
+  selectedPioneer = res.publisher;
+  pioneerAllRecords = res.records;
+  pioneerServiceYears = res.serviceYears || [];
+  pioneerCurrentSY = res.currentServiceYear || getCurrentServiceYear();
+
+  document.getElementById("pioneerAuthBox").style.display = "none";
+  document.getElementById("pioneerRecordDisplay").style.display = "block";
+  document.getElementById("pioneerNameHeader").innerText = getDisplayName(selectedPioneer);
+
+  fillPioneerYearFilter();
+  renderPioneerRecordTable();
+
+  const editAlert = document.getElementById("pioneerEditAlert");
+  if (res.canEditMonth) {
+    editAlert.style.display = "flex";
+    setText("pioneerEditText", t().canEdit(res.canEditMonth));
+  } else {
+    editAlert.style.display = "none";
+  }
+}
+
+function fillPioneerYearFilter() {
+  const sel = document.getElementById("pioneerYearFilter");
+  const current = Number(sel.value) || pioneerCurrentSY;
+  sel.innerHTML = "";
+  pioneerServiceYears.forEach(sy => {
+    const opt = document.createElement("option");
+    opt.value = sy;
+    opt.text = t().pioneerYearOpt(sy);
+    if (sy === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderPioneerRecordTable() {
+  if (!pioneerAllRecords) return;
+
+  const yr = Number(document.getElementById("pioneerYearFilter").value) || pioneerCurrentSY;
+  const start = yr - 1;
+  const months = [
+    `${start}-09`, `${start}-10`, `${start}-11`, `${start}-12`,
+    `${yr}-01`, `${yr}-02`, `${yr}-03`, `${yr}-04`, `${yr}-05`, `${yr}-06`, `${yr}-07`, `${yr}-08`
+  ];
+
+  const tb = document.getElementById("pioneerRecordTable");
+  tb.innerHTML = "";
+  let sumHours = 0;
+  let sumCredit = 0;
+
+  months.forEach(m => {
+    const r = pioneerAllRecords[m] || { participated: "-", hours: 0, credit: 0, studies: 0, remarks: "" };
+    const h = Number(r.hours) || 0;
+    const c = Number(r.credit) || 0;
+    const s = Number(r.studies) || 0;
+    if (r.participated === "예") {
+      sumHours += h;
+      sumCredit += c;
+    }
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="sticky-col-month nowrap"><strong>${JW.esc(t().monthName(Number(m.split("-")[1])))}</strong></td>
+      <td>${s > 0 ? s : ""}</td>
+      <td class="fw-bold">${h > 0 ? h : ""}</td>
+      <td>${c > 0 ? c : ""}</td>
+      <td class="text-start small text-secondary pioneer-remarks-cell">${JW.esc(r.remarks || "")}</td>`;
+    tb.appendChild(tr);
+  });
+
+  setText("annualHoursValue", sumHours);
+  setText("annualCreditValue", sumCredit);
+  setText("annualTotalValue", sumHours + sumCredit);
+}
+
+function resetPioneerView() {
+  document.getElementById("pioneerRecordDisplay").style.display = "none";
+  document.getElementById("pioneerAuthBox").style.display = "block";
+  document.getElementById("pioneerPin").value = "";
+  document.getElementById("pioneerNameSearch").value = "";
+  pioneerAllRecords = null;
+  setPioneerSetupMode(false);
+  filterPioneers();
+}
+
+function logoutPioneerDevice() {
+  if (!selectedPioneer) return;
+  JW.clearPubToken(selectedPioneer.id);
+  alert(t().logoutDone);
+  resetPioneerView();
+}
+
+/** 파이오니아 기록 → 이번 달 보고 수정 (이미 로그인되어 있으므로 PIN 을 다시 묻지 않음) */
+async function openPioneerEditModal() {
+  if (!selectedPioneer) return;
+  switchMainTab("report");
+  document.getElementById("nameSearch").value = "";
+  populatePublisherDropdowns();
+  document.getElementById("publisherSelect").value = selectedPioneer.id;
+  await onPublisherSelectChanged();
+}
+
+async function submitChangePin() {
+  if (!selectedPioneer) return;
+  const cur = document.getElementById("curPin").value.trim();
+  const n1 = document.getElementById("newPin").value.trim();
+  const n2 = document.getElementById("confirmPin").value.trim();
+
+  if (!cur) { alert(t().curPinRequired); return; }
+  if (!/^\d{4,6}$/.test(n1)) { alert(t().pinFormat); return; }
+  if (n1 !== n2) { alert(t().pinMismatch); return; }
+
+  const btn = document.getElementById("btnChangePin");
+  btn.disabled = true;
+
+  const res = await api("changeMyPin", { pubId: selectedPioneer.id, currentPin: cur, newPin: n1 });
+
+  btn.disabled = false;
+  alert(res.success ? t().pinChanged : res.message);
+
+  if (res.success) {
+    JW.setPubToken(selectedPioneer.id, res.token, document.getElementById("chkRememberPin").checked);
+    ["curPin", "newPin", "confirmPin"].forEach(id => { document.getElementById(id).value = ""; });
+  }
+}
+
+</script>
+
+</body>
+</html>
