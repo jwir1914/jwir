@@ -815,9 +815,9 @@
         style="max-height:420px; overflow-y:auto;"
       >
 
-        <table class="table table-hover table-sm align-middle text-center">
+        <table class="table table-hover table-sm align-middle text-center text-nowrap mb-0">
 
-          <thead class="table-light">
+          <thead class="table-light" style="position:sticky; top:0;">
 
             <tr>
               <th>성명</th>
@@ -1311,7 +1311,7 @@
 
     <div
       id="tabMinutes"
-      class="card p-3 mb-4"
+      class="card p-2 p-md-3 mb-4"
       style="display:none;"
     >
 
@@ -1754,6 +1754,10 @@ function showTab(tab) {
       ? "block"
       : "none";
 
+
+  // 회의록은 PC 에서 더 넓게 읽도록 화면 폭을 늘린다
+  const mainBox = document.querySelector("body > .container");
+  if (mainBox) mainBox.style.maxWidth = tab === "minutes" ? "1280px" : "960px";
 
   if (tab === "minutes") {
 
@@ -3389,7 +3393,7 @@ async function loadServiceReports() {
           ${Number(report.studies) || 0}
         </td>
 
-        <td class="text-start nowrap">
+        <td class="text-start" style="white-space:normal; min-width:220px;">
           <small>
             ${escapeHtmlElder(report.remarks || "")}
           </small>
