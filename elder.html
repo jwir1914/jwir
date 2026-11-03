@@ -1592,15 +1592,23 @@ async function loadMinutesList() {
     return;
   }
 
-  list.innerHTML =
-    `<div class="list-group">` +
-    res.items.map(it => `
+  // 폴더별로 묶기: 맨 위 폴더의 문서 먼저, 그다음 하위 폴더 (이름 역순 — 2026, 2025 ...)
+  const byFolder = {};
+  res.items.forEach(it => { (byFolder[it.folder || ""] = byFolder[it.folder || ""] || []).push(it); });
+  const folderNames = Object.keys(byFolder).sort((a, b) =>
+    a === "" ? -1 : b === "" ? 1 : b.localeCompare(a, "ko", { numeric: true }));
+
+  const itemHtml = it => `
       <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3"
               onclick="openMinutes('${JW.esc(it.id)}')">
         <span class="fw-bold">📄 ${JW.esc(it.title)}</span>
         <small class="text-muted">수정 ${JW.esc(it.updated)}</small>
-      </button>`).join("") +
-    `</div>`;
+      </button>`;
+
+  list.innerHTML = folderNames.map(name =>
+    (name ? `<div class="fw-bold text-secondary mt-3 mb-1">📁 ${JW.esc(name.split("/").join(" › "))}</div>` : "") +
+    `<div class="list-group">${byFolder[name].map(itemHtml).join("")}</div>`
+  ).join("");
 }
 
 
